@@ -62,7 +62,7 @@ var defaultCapability = mysql.ClientLongPassword | mysql.ClientLongFlag |
 	mysql.ClientMultiResults | mysql.ClientLocalFiles |
 	mysql.ClientConnectAtts | mysql.ClientPluginAuth
 
-// clientConn represents a connection between server and client, it maintains connection specific state,
+// xClientConn represents a connection between server and client, it maintains connection specific state,
 // handles client query.
 type clientConn struct {
 	pkt          *packetIO // a helper to read and write data in packet format.

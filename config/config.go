@@ -28,6 +28,8 @@ type Config struct {
 	SlowThreshold  int    `json:"slow_threshold" toml:"slow_threshold"`
 	QueryLogMaxlen int    `json:"query_log_max_len" toml:"query_log_max_len"`
 	TCPKeepAlive   bool   `json:"tcp_keep_alive" toml:"tcp_keep_alive"`
+	XAddr          string `json:"addr" toml:"addr"`
+	XSocket        string `json:"socket" toml:"socket"`
 }
 
 var cfg *Config

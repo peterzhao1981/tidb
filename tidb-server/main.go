@@ -38,7 +38,6 @@ import (
 	"github.com/pingcap/tidb/store/localstore/boltdb"
 	"github.com/pingcap/tidb/store/tikv"
 	"github.com/pingcap/tidb/util/printer"
-	"github.com/pingcap/tidb/x-server"
 	"github.com/pingcap/tipb/go-binlog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -120,11 +119,11 @@ func main() {
 	cfg.QueryLogMaxlen = *queryLogMaxlen
 	cfg.TCPKeepAlive = *tcpKeepAlive
 
-	xcfg := &xserver.Config{
-		Addr:     fmt.Sprintf("%s:%s", *xhost, *xport),
-		Socket:   *socket,
-		LogLevel: *logLevel,
-	}
+	//xcfg := &xserver.Config{
+	//	Addr:     fmt.Sprintf("%s:%s", *xhost, *xport),
+	//	Socket:   *socket,
+	//	LogLevel: *logLevel,
+	//}
 
 	// set log options
 	if len(*logFile) > 0 {
@@ -168,13 +167,13 @@ func main() {
 	if err != nil {
 		log.Fatal(errors.ErrorStack(err))
 	}
-	var xsvr *xserver.Server
-	if *startXServer {
-		xsvr, err = xserver.NewServer(xcfg)
-		if err != nil {
-			log.Fatal(errors.ErrorStack(err))
-		}
-	}
+	//var xsvr *xserver.Server
+	//if *startXServer {
+	//	xsvr, err = xserver.NewServer(xcfg)
+	//	if err != nil {
+	//		log.Fatal(errors.ErrorStack(err))
+	//	}
+	//}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc,
@@ -186,9 +185,9 @@ func main() {
 	go func() {
 		sig := <-sc
 		log.Infof("Got signal [%d] to exit.", sig)
-		if *startXServer {
-			xsvr.Close() // Should close xserver before server.
-		}
+		//if *startXServer {
+		//	xsvr.Close() // Should close xserver before server.
+		//}
 		svr.Close()
 	}()
 
@@ -202,11 +201,11 @@ func main() {
 	if err := svr.Run(); err != nil {
 		log.Error(err)
 	}
-	if *startXServer {
-		if err := xsvr.Run(); err != nil {
-			log.Error(err)
-		}
-	}
+	//if *startXServer {
+	//	if err := xsvr.Run(); err != nil {
+	//		log.Error(err)
+	//	}
+	//}
 	domain.Close()
 	os.Exit(0)
 }

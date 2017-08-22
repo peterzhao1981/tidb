@@ -336,7 +336,7 @@ func convertColumnInfo(fld *ast.ResultField) (ci *ColumnInfo) {
 	ci.Type = uint8(fld.Column.Tp)
 
 	// Keep things compatible for old clients.
-	// Refer to mysql-server/sql/protocol.cc send_result_set_metadata()
+	// Refer to mysql-server/sql/protocol.xcc send_result_set_metadata()
 	if ci.Type == mysql.TypeVarchar {
 		ci.Type = mysql.TypeVarString
 	}

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xserver
+package server
 
 import (
 	"io"
@@ -23,9 +23,9 @@ import (
 	"github.com/pingcap/tidb/util/arena"
 )
 
-// clientConn represents a connection between server and client,
+// xClientConn represents a connection between server and client,
 // it maintains connection specific state, handles client query.
-type clientConn struct {
+type xClientConn struct {
 	conn         net.Conn
 	server       *Server         // a reference of server instance.
 	connectionID uint32          // atomically allocated by a global variable, unique in process scope.
@@ -37,46 +37,46 @@ type clientConn struct {
 	killed       bool
 }
 
-func (cc *clientConn) Run() {
+func (xcc *xClientConn) Run() {
 	defer func() {
 		recover()
-		cc.Close()
+		xcc.Close()
 	}()
 
-	for !cc.killed {
-		tp, payload, err := cc.readPacket()
+	for !xcc.killed {
+		tp, payload, err := xcc.readPacket()
 		if err != nil {
 			if terror.ErrorNotEqual(err, io.EOF) {
 				log.Errorf("[%d] read packet error, close this connection %s",
-					cc.connectionID, errors.ErrorStack(err))
+					xcc.connectionID, errors.ErrorStack(err))
 			}
 			return
 		}
-		if err = cc.dispatch(tp, payload); err != nil {
+		if err = xcc.dispatch(tp, payload); err != nil {
 			if terror.ErrorEqual(err, terror.ErrResultUndetermined) {
 				log.Errorf("[%d] result undetermined error, close this connection %s",
-					cc.connectionID, errors.ErrorStack(err))
+					xcc.connectionID, errors.ErrorStack(err))
 			} else if terror.ErrorEqual(err, terror.ErrCritical) {
 				log.Errorf("[%d] critical error, stop the server listener %s",
-					cc.connectionID, errors.ErrorStack(err))
+					xcc.connectionID, errors.ErrorStack(err))
 				select {
-				case cc.server.stopListenerCh <- struct{}{}:
+				case xcc.server.stopListenerCh <- struct{}{}:
 				default:
 				}
 			}
-			log.Warnf("[%d] dispatch error: %s, %s", cc.connectionID, cc, err)
-			cc.writeError(err)
+			log.Warnf("[%d] dispatch error: %s, %s", xcc.connectionID, xcc, err)
+			xcc.writeError(err)
 			return
 		}
 	}
 }
 
-func (cc *clientConn) Close() error {
-	err := cc.conn.Close()
+func (xcc *xClientConn) Close() error {
+	err := xcc.conn.Close()
 	return errors.Trace(err)
 }
 
-func (cc *clientConn) handshake() error {
+func (xcc *xClientConn) handshake() error {
 	// TODO: implement it.
 	return nil
 }
@@ -87,13 +87,13 @@ func (cc *clientConn) handshake() error {
 // | 4 bytes length | 1 byte type | payload[0:length-1] |
 // ------------------------------------------------------
 // See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
-func (cc *clientConn) readPacket() (byte, []byte, error) {
+func (xcc *xClientConn) readPacket() (byte, []byte, error) {
 	return 0x00, nil, nil
 }
 
-func (cc *clientConn) dispatch(tp byte, payload []byte) error {
+func (xcc *xClientConn) dispatch(tp byte, payload []byte) error {
 	return nil
 }
 
-func (cc *clientConn) writeError(e error) {
+func (xcc *xClientConn) writeError(e error) {
 }
