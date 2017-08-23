@@ -163,17 +163,18 @@ func main() {
 	var driver server.IDriver
 	driver = server.NewTiDBDriver(store)
 	var svr *server.Server
-	svr, err = server.NewServer(cfg, driver)
+	svr, err = server.NewServer(cfg, driver, server.MysqlProtocol)
 	if err != nil {
 		log.Fatal(errors.ErrorStack(err))
 	}
-	//var xsvr *xserver.Server
-	//if *startXServer {
-	//	xsvr, err = xserver.NewServer(xcfg)
-	//	if err != nil {
-	//		log.Fatal(errors.ErrorStack(err))
-	//	}
-	//}
+
+	var xsvr *server.Server
+	if *startXServer {
+		xsvr, err = server.NewServer(cfg, driver, server.MysqlXProtocol)
+		if err != nil {
+			log.Fatal(errors.ErrorStack(err))
+		}
+	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc,
@@ -201,11 +202,11 @@ func main() {
 	if err := svr.Run(); err != nil {
 		log.Error(err)
 	}
-	//if *startXServer {
-	//	if err := xsvr.Run(); err != nil {
-	//		log.Error(err)
-	//	}
-	//}
+	if *startXServer {
+		if err := xsvr.Run(); err != nil {
+			log.Error(err)
+		}
+	}
 	domain.Close()
 	os.Exit(0)
 }

@@ -23,21 +23,26 @@ import (
 	"github.com/pingcap/tidb/util/arena"
 )
 
-// xClientConn represents a connection between server and client,
+// mysqlXClientConn represents a connection between server and client,
 // it maintains connection specific state, handles client query.
-type xClientConn struct {
+type mysqlXClientConn struct {
+	//pkt          *packetIO // a helper to read and write data in packet format.
 	conn         net.Conn
-	server       *Server         // a reference of server instance.
-	connectionID uint32          // atomically allocated by a global variable, unique in process scope.
-	collation    uint8           // collation used by client, may be different from the collation used by database.
-	user         string          // user of the client.
-	dbname       string          // default database name.
-	salt         []byte          // random bytes used for authentication.
-	alloc        arena.Allocator // an memory allocator for reducing memory allocation.
+	server       *Server           // a reference of server instance.
+	capability   uint32            // client capability affects the way server handles client request.
+	connectionID uint32            // atomically allocated by a global variable, unique in process scope.
+	collation    uint8             // collation used by client, may be different from the collation used by database.
+	user         string            // user of the client.
+	dbname       string            // default database name.
+	salt         []byte            // random bytes used for authentication.
+	alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
+	lastCmd      string            // latest sql query string, currently used for logging error.
+	//ctx          QueryCtx          // an interface to execute sql statements.
+	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
 	killed       bool
 }
 
-func (xcc *xClientConn) Run() {
+func (xcc *mysqlXClientConn) Run() {
 	defer func() {
 		recover()
 		xcc.Close()
@@ -71,12 +76,12 @@ func (xcc *xClientConn) Run() {
 	}
 }
 
-func (xcc *xClientConn) Close() error {
+func (xcc *mysqlXClientConn) Close() error {
 	err := xcc.conn.Close()
 	return errors.Trace(err)
 }
 
-func (xcc *xClientConn) handshake() error {
+func (xcc *mysqlXClientConn) handshake() error {
 	// TODO: implement it.
 	return nil
 }
@@ -87,13 +92,13 @@ func (xcc *xClientConn) handshake() error {
 // | 4 bytes length | 1 byte type | payload[0:length-1] |
 // ------------------------------------------------------
 // See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
-func (xcc *xClientConn) readPacket() (byte, []byte, error) {
+func (xcc *mysqlXClientConn) readPacket() (byte, []byte, error) {
 	return 0x00, nil, nil
 }
 
-func (xcc *xClientConn) dispatch(tp byte, payload []byte) error {
+func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
 	return nil
 }
 
-func (xcc *xClientConn) writeError(e error) {
+func (xcc *mysqlXClientConn) writeError(e error) {
 }
