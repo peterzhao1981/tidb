@@ -20,6 +20,7 @@ import (
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/terror"
+	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/arena"
 )
 
@@ -101,4 +102,25 @@ func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
 }
 
 func (xcc *mysqlXClientConn) writeError(e error) {
+}
+
+
+func (cc *mysqlXClientConn) isKilled() bool {
+	return cc.killed
+}
+
+func (cc *mysqlXClientConn) Cancel(query bool) {
+	//cc.ctx.Cancel()
+	if !query {
+		cc.killed = true
+	}
+}
+
+func (cc *mysqlXClientConn) id() uint32 {
+	return cc.connectionID
+}
+
+func (cc *mysqlXClientConn) showProcess() util.ProcessInfo {
+	//return cc.ctx.ShowProcess()
+	return util.ProcessInfo{}
 }
