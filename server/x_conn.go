@@ -17,7 +17,6 @@ import (
 	"io"
 	"net"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/terror"
@@ -117,42 +116,42 @@ func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
 	switch Mysqlx.ClientMessages_Type(tp) {
 	case Mysqlx.ClientMessages_CON_CAPABILITIES_GET:
 		var data Mysqlx_Connection.CapabilitiesGet
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_CON_CAPABILITIES_SET:
 		var data Mysqlx_Connection.CapabilitiesSet
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_CON_CLOSE:
 		var data Mysqlx_Connection.Close
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_START:
 		var data Mysqlx_Session.AuthenticateStart
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_CONTINUE:
 		var data Mysqlx_Session.AuthenticateContinue
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_SESS_RESET:
 		var data Mysqlx_Session.Reset
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_SESS_CLOSE:
 		var data Mysqlx_Session.Close
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_SQL_STMT_EXECUTE:
 		var data Mysqlx_Sql.StmtExecute
-		if err := proto.Unmarshal(payload, &data); err != nil {
+		if err := data.Unmarshal(payload); err != nil {
 			return err
 		}
 	case Mysqlx.ClientMessages_CRUD_FIND:
