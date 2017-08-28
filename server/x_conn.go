@@ -17,17 +17,22 @@ import (
 	"io"
 	"net"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/arena"
+	"github.com/pingcap/tipb/go-mysqlx"
+	"github.com/pingcap/tipb/go-mysqlx/Connection"
+	"github.com/pingcap/tipb/go-mysqlx/Session"
+	"github.com/pingcap/tipb/go-mysqlx/Sql"
 )
 
 // mysqlXClientConn represents a connection between server and client,
 // it maintains connection specific state, handles client query.
 type mysqlXClientConn struct {
-	//pkt          *packetIO // a helper to read and write data in packet format.
+	pkt          *xPacketIO // a helper to read and write data in packet format.
 	conn         net.Conn
 	server       *Server           // a reference of server instance.
 	capability   uint32            // client capability affects the way server handles client request.
@@ -87,17 +92,79 @@ func (xcc *mysqlXClientConn) handshake() error {
 	return nil
 }
 
-// readPacket reads a full size request encoded in x protocol.
 // The message struct is like:
-// ______________________________________________________
-// | 4 bytes length | 1 byte type | payload[0:length-1] |
-// ------------------------------------------------------
+// -------------------------------------------------------------------------------
+// | header                         | payload                                    |
+// -------------------------------------------------------------------------------
+// | 4 bytes length (little endian) | 1 byte message type | message (length - 1) |
+// -------------------------------------------------------------------------------
+// message needs to be decoded by protobuf.
 // See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
+// readPacket reads a full size request in x protocol.
 func (xcc *mysqlXClientConn) readPacket() (byte, []byte, error) {
-	return 0x00, nil, nil
+	payload, err := xcc.pkt.readPacket()
+	if err != nil {
+		return 0x00, nil, err
+	}
+	return payload[0], payload[1:], nil
+}
+
+func (xcc *mysqlXClientConn) writePacket(msgType byte, message []byte) error {
+	return xcc.pkt.writePacket(append([]byte{msgType}, message...))
 }
 
 func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
+	switch Mysqlx.ClientMessages_Type(tp) {
+	case Mysqlx.ClientMessages_CON_CAPABILITIES_GET:
+		var data Mysqlx_Connection.CapabilitiesGet
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_CON_CAPABILITIES_SET:
+		var data Mysqlx_Connection.CapabilitiesSet
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_CON_CLOSE:
+		var data Mysqlx_Connection.Close
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_START:
+		var data Mysqlx_Session.AuthenticateStart
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_CONTINUE:
+		var data Mysqlx_Session.AuthenticateContinue
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SESS_RESET:
+		var data Mysqlx_Session.Reset
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SESS_CLOSE:
+		var data Mysqlx_Session.Close
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SQL_STMT_EXECUTE:
+		var data Mysqlx_Sql.StmtExecute
+		if err := proto.Unmarshal(payload, &data); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_CRUD_FIND:
+	case Mysqlx.ClientMessages_CRUD_INSERT:
+	case Mysqlx.ClientMessages_CRUD_UPDATE:
+	case Mysqlx.ClientMessages_CRUD_DELETE:
+	case Mysqlx.ClientMessages_EXPECT_OPEN:
+	case Mysqlx.ClientMessages_EXPECT_CLOSE:
+	case Mysqlx.ClientMessages_CRUD_CREATE_VIEW:
+	case Mysqlx.ClientMessages_CRUD_MODIFY_VIEW:
+	case Mysqlx.ClientMessages_CRUD_DROP_VIEW:
+	}
 	return nil
 }
 
