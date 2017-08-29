@@ -12,3 +12,11 @@
 // limitations under the License.
 
 package connection
+
+type CapabilityHandler interface {
+	String() string
+	IsSupport() bool
+	Get()
+	Set() bool
+	Commit()
+}
