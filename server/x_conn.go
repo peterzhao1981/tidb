@@ -86,8 +86,25 @@ func (xcc *mysqlXClientConn) Close() error {
 	return errors.Trace(err)
 }
 
+
+func (xcc *mysqlXClientConn) handshakeConnection() error {
+
+	return nil
+}
+
+func (xcc *mysqlXClientConn) handshakeSession() error {
+	return nil
+}
+
 func (xcc *mysqlXClientConn) handshake() error {
-	// TODO: implement it.
+	if err := xcc.handshakeConnection(); err != nil {
+
+	}
+
+	if err := xcc.handshakeSession(); err != nil {
+
+	}
+
 	return nil
 }
 
