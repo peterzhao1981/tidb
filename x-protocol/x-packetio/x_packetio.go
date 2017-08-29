@@ -32,7 +32,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package x_packetio
 
 import (
 	"bufio"
@@ -49,14 +49,14 @@ const (
 	defaultXWriterSize = 4 + 4 * 1024 * 1024
 )
 
-// xPacketIO is a helper to read and write data in packet format.
-type xPacketIO struct {
+// XPacketIO is a helper to read and write data in packet format.
+type XPacketIO struct {
 	rb *bufio.Reader
 	wb *bufio.Writer
 }
 
-func newXPacketIO(conn net.Conn) *xPacketIO {
-	p := &xPacketIO{
+func NewXPacketIO(conn net.Conn) *XPacketIO {
+	p := &XPacketIO{
 		rb: bufio.NewReaderSize(conn, defaultXReaderSize),
 		wb: bufio.NewWriterSize(conn, defaultXWriterSize),
 	}
@@ -64,7 +64,7 @@ func newXPacketIO(conn net.Conn) *xPacketIO {
 	return p
 }
 
-func (p *xPacketIO) readPacket() ([]byte, error) {
+func (p *XPacketIO) ReadPacket() ([]byte, error) {
 	header := make([]byte, 4)
 
 	if _, err := io.ReadFull(p.rb, header); err != nil {
@@ -80,7 +80,7 @@ func (p *xPacketIO) readPacket() ([]byte, error) {
 	return data, nil
 }
 
-func (p *xPacketIO) writePacket(data []byte) error {
+func (p *XPacketIO) WritePacket(data []byte) error {
 	length := len(data)
 	packet := make([]byte, 4)
 
@@ -94,6 +94,6 @@ func (p *xPacketIO) writePacket(data []byte) error {
 	}
 }
 
-func (p *xPacketIO) flush() error {
+func (p *XPacketIO) flush() error {
 	return p.wb.Flush()
 }

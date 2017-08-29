@@ -116,7 +116,7 @@ func (s *Server) newConn(conn net.Conn) *mysqlClientConn {
 			}
 		}
 	}
-	cc.salt = util.RandomBuf(20)
+	cc.salt = util.RandomBuf(mysql.SCRAMBLE_LENGTH)
 	return cc
 }
 

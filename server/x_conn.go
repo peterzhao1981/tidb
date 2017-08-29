@@ -21,6 +21,7 @@ import (
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util"
+	"github.com/pingcap/tidb/x-protocol/x-packetio"
 	"github.com/pingcap/tidb/util/arena"
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
@@ -31,7 +32,7 @@ import (
 // mysqlXClientConn represents a connection between server and client,
 // it maintains connection specific state, handles client query.
 type mysqlXClientConn struct {
-	pkt          *xPacketIO // a helper to read and write data in packet format.
+	pkt          *x_packetio.XPacketIO // a helper to read and write data in packet format.
 	conn         net.Conn
 	server       *Server           // a reference of server instance.
 	capability   uint32            // client capability affects the way server handles client request.
@@ -118,7 +119,7 @@ func (xcc *mysqlXClientConn) handshake() error {
 // See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
 // readPacket reads a full size request in x protocol.
 func (xcc *mysqlXClientConn) readPacket() (byte, []byte, error) {
-	payload, err := xcc.pkt.readPacket()
+	payload, err := xcc.pkt.ReadPacket()
 	if err != nil {
 		return 0x00, nil, err
 	}
@@ -126,7 +127,7 @@ func (xcc *mysqlXClientConn) readPacket() (byte, []byte, error) {
 }
 
 func (xcc *mysqlXClientConn) writePacket(msgType byte, message []byte) error {
-	return xcc.pkt.writePacket(append([]byte{msgType}, message...))
+	return xcc.pkt.WritePacket(append([]byte{msgType}, message...))
 }
 
 func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
