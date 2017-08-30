@@ -19,7 +19,7 @@ import (
 
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/mysql"
-	"github.com/pingcap/tidb/x-protocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/x-packetio"
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/arena"
 )

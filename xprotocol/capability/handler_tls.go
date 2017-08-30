@@ -13,22 +13,27 @@
 
 package capability
 
-type CapabilityTLS struct {
+import (
+	"github.com/pingcap/tipb/go-mysqlx/Connection"
+	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
+)
+
+type HandleTLS struct {
 
 }
 
-func (c *CapabilityTLS) Name() string {
-	return "tls"
-}
-
-func (c *CapabilityTLS) IsSupport() bool {
+func (h *HandleTLS) IsSupport() bool {
 	return false
 }
 
-func (c *CapabilityTLS) Get() {
-
+func (h *HandleTLS) GetName() string {
+	return "tls"
 }
 
-func (c *CapabilityTLS) Set() error {
+func (h *HandleTLS) Get() Mysqlx_Connection.Capability {
+	return Mysqlx_Connection.Capability{}
+}
 
+func (h *HandleTLS) Set(any *Mysqlx_Datatypes.Any) bool {
+	return false
 }

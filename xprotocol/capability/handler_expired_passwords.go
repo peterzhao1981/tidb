@@ -14,29 +14,26 @@
 package capability
 
 import (
+	"github.com/pingcap/tidb/xprotocol/util"
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
-	"github.com/pingcap/tidb/xprotocol/util"
 )
 
-type HandleAuthMech struct {
-	Values []string
+type HandlerExpiredPasswords struct {
+	Name string
+	Expired bool
 }
 
-func (h *HandleAuthMech) IsSupport() bool {
+func (h *HandlerExpiredPasswords) IsSupport() bool {
 	return true
 }
 
-func (h *HandleAuthMech) GetName() string {
-	return "authentication.mechanisms"
+func (h *HandlerExpiredPasswords) GetName() string {
+	return h.Name
 }
 
-func (h *HandleAuthMech) Get() Mysqlx_Connection.Capability {
-	meths := []Mysqlx_Datatypes.Any{}
-	for _, v := range h.Values {
-		meths = append(meths, util.SetString([]byte(v)))
-	}
-	val := util.SetScalarArray(meths)
+func (h *HandlerExpiredPasswords) Get() Mysqlx_Connection.Capability {
+	val := util.SetBool(h.Expired)
 	c := Mysqlx_Connection.Capability{
 		Name: &h.GetName(),
 		Value: &val,
@@ -44,6 +41,7 @@ func (h *HandleAuthMech) Get() Mysqlx_Connection.Capability {
 	return c
 }
 
-func (h *HandleAuthMech) Set(any *Mysqlx_Datatypes.Any) bool {
+func (h *HandlerExpiredPasswords) Set(any *Mysqlx_Datatypes.Any) bool {
 	return false
 }
+
