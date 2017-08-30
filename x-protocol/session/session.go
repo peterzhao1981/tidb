@@ -3,6 +3,7 @@ package session
 import (
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Session"
+	"github.com/pingcap/tidb/x-protocol/x-packetio"
 )
 
 type sessionState int32
@@ -21,6 +22,7 @@ type XSession struct{
 	m_state              sessionState
 	m_state_before_close sessionState
 	session_id           uint16
+	pkt                  *x_packetio.XPacketIO
 }
 
 func(xs *XSession) handleAuthMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) bool {
@@ -31,7 +33,7 @@ func(xs *XSession) handleAuthMessage(msgType Mysqlx.ClientMessages_Type, payload
 			return false
 		}
 
-		xs.authHandler = createAuthHandler(*data.MechName)
+		xs.authHandler = createAuthHandler(*data.MechName, xs.pkt)
 		if xs.authHandler == nil {
 			xs.stop_auth()
 			return false
@@ -61,16 +63,16 @@ func(xs *XSession) handleAuthMessage(msgType Mysqlx.ClientMessages_Type, payload
 	return true
 }
 
-func(xs *XSession)on_auth_success(r *Response) {
+func(xs *XSession) on_auth_success(r *Response) {
 	xs.stop_auth()
 	xs.m_state = ready
 
 }
 
-func(xs *XSession)on_auth_failure(r *Response) {
+func(xs *XSession) on_auth_failure(r *Response) {
 	xs.stop_auth()
 }
 
-func(xs *XSession)stop_auth() {
+func(xs *XSession) stop_auth() {
 	xs.authHandler = nil
 }

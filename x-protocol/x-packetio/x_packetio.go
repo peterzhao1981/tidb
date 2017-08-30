@@ -64,7 +64,29 @@ func NewXPacketIO(conn net.Conn) *XPacketIO {
 	return p
 }
 
-func (p *XPacketIO) ReadPacket() ([]byte, error) {
+// The message struct is like:
+// -------------------------------------------------------------------------------
+// | header                         | payload                                    |
+// -------------------------------------------------------------------------------
+// | 4 bytes length (little endian) | 1 byte message type | message (length - 1) |
+// -------------------------------------------------------------------------------
+// message needs to be decoded by protobuf.
+// See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
+// readPacket reads a full size request in x protocol.
+func (p *XPacketIO) ReadPacket() (int32, []byte, error) {
+	payload, err := p.readPacket()
+	if err != nil {
+		return 0x00, nil, err
+	}
+	return int32(payload[0]), payload[1:], nil
+}
+
+func (p *XPacketIO) WritePacket(msgType int32, message []byte) error {
+	return p.writePacket(append([]byte{byte(msgType)}, message...))
+}
+
+
+func (p *XPacketIO) readPacket() ([]byte, error) {
 	header := make([]byte, 4)
 
 	if _, err := io.ReadFull(p.rb, header); err != nil {
@@ -80,7 +102,7 @@ func (p *XPacketIO) ReadPacket() ([]byte, error) {
 	return data, nil
 }
 
-func (p *XPacketIO) WritePacket(data []byte) error {
+func (p *XPacketIO) writePacket(data []byte) error {
 	length := len(data)
 	packet := make([]byte, 4)
 

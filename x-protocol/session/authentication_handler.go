@@ -2,6 +2,7 @@ package session
 
 import (
 	"github.com/ngaut/log"
+	"github.com/pingcap/tidb/x-protocol/x-packetio"
 )
 
 type Status int32
@@ -24,11 +25,12 @@ type AuthenticationHandler interface {
 	handleContinue(data []byte) *Response
 }
 
-func createAuthHandler(method string) AuthenticationHandler {
+func createAuthHandler(method string, pkt *x_packetio.XPacketIO) AuthenticationHandler {
 	switch method {
 	case "MYSQL41":
 		return &saslMysql41Auth{
 			m_state:S_starting,
+			pkt: pkt,
 		}
 	case "PLAIN":
 		return &saslPlainAuth{}

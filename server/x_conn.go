@@ -55,7 +55,7 @@ func (xcc *mysqlXClientConn) Run() {
 	}()
 
 	for !xcc.killed {
-		tp, payload, err := xcc.readPacket()
+		tp, payload, err := xcc.pkt.ReadPacket()
 		if err != nil {
 			if terror.ErrorNotEqual(err, io.EOF) {
 				log.Errorf("[%d] read packet error, close this connection %s",
@@ -109,28 +109,7 @@ func (xcc *mysqlXClientConn) handshake() error {
 	return nil
 }
 
-// The message struct is like:
-// -------------------------------------------------------------------------------
-// | header                         | payload                                    |
-// -------------------------------------------------------------------------------
-// | 4 bytes length (little endian) | 1 byte message type | message (length - 1) |
-// -------------------------------------------------------------------------------
-// message needs to be decoded by protobuf.
-// See: https://dev.mysql.com/doc/internals/en/x-protocol-messages-messages.html
-// readPacket reads a full size request in x protocol.
-func (xcc *mysqlXClientConn) readPacket() (byte, []byte, error) {
-	payload, err := xcc.pkt.ReadPacket()
-	if err != nil {
-		return 0x00, nil, err
-	}
-	return payload[0], payload[1:], nil
-}
-
-func (xcc *mysqlXClientConn) writePacket(msgType byte, message []byte) error {
-	return xcc.pkt.WritePacket(append([]byte{msgType}, message...))
-}
-
-func (xcc *mysqlXClientConn) dispatch(tp byte, payload []byte) error {
+func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
 	switch Mysqlx.ClientMessages_Type(tp) {
 	case Mysqlx.ClientMessages_CON_CAPABILITIES_GET:
 		var data Mysqlx_Connection.CapabilitiesGet

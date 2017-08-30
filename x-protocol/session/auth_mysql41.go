@@ -3,6 +3,7 @@ package session
 import (
 	"github.com/pingcap/tidb/mysql"
 	"github.com/pingcap/tidb/util"
+	"github.com/pingcap/tidb/x-protocol/x-packetio"
 )
 
 type authMysql41State int32
@@ -17,6 +18,7 @@ const (
 type saslMysql41Auth struct {
 	m_state authMysql41State
 	m_salt  []byte
+	pkt		*x_packetio.XPacketIO
 }
 
 func (spa *saslMysql41Auth) handleStart(mechanism *string, data []byte, initial_response []byte) *Response {
