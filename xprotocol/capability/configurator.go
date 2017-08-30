@@ -11,12 +11,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connection
+package capability
 
-type CapabilityHandler interface {
-	String() string
-	IsSupport() bool
-	Get()
-	Set() bool
-	Commit()
-}

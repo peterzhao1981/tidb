@@ -11,5 +11,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connection
+package capability
 
+import "github.com/pingcap/tipb/go-mysqlx/Datatypes"
+
+type CapabilityAuthMech struct {
+
+}
+
+func (c *CapabilityAuthMech) Name() string {
+	return "authentication.mechanisms"
+}
+
+func (c *CapabilityAuthMech) IsSupport() bool {
+	return true
+}
+
+func (c *CapabilityAuthMech) Get(any *Mysqlx_Datatypes.Any) {
+}
+
+func (c *CapabilityAuthMech) Set(any *Mysqlx_Datatypes.Any) bool {
+	return false
+}

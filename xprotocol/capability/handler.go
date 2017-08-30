@@ -11,4 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connection
+package capability
+
+import "github.com/pingcap/tipb/go-mysqlx/Datatypes"
+
+type CapabilityHandler interface {
+
+	Name() string
+
+	IsSupport() bool
+
+	Get(any *Mysqlx_Datatypes.Any)
+
+	Set(any *Mysqlx_Datatypes.Any) bool
+
+	Commit()
+}
