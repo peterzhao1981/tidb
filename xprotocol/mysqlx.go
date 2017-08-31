@@ -13,8 +13,9 @@ func getCapability(handler capability.Handler) *Mysqlx_Connection.Capability {
 	return handler.Get()
 }
 
+// GetCapabilities gets capabilities which to be sent to clint.
 func GetCapabilities() *Mysqlx_Connection.Capabilities {
-	authHandler := &capability.HandleAuthMech {
+	authHandler := &capability.HandlerAuthMechanisms{
 		Values: []string{"MYSQL41"},
 	}
 	docHandler := &capability.HandlerReadOnlyValue{
@@ -40,6 +41,7 @@ func GetCapabilities() *Mysqlx_Connection.Capabilities {
 	return &caps
 }
 
+// DealInitCapabilitiesSet deals the initial capabilities set message of client.
 func DealInitCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 	if tp != Mysqlx.ClientMessages_CON_CAPABILITIES_SET {
 		return errors.New("bad capabilities set")
@@ -70,6 +72,7 @@ func DealInitCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 	return nil
 }
 
+// DealCapabilitiesGet deals capabilities get message, get message content will always be empty.
 func DealCapabilitiesGet (tp Mysqlx.ClientMessages_Type, _ []byte) error {
 	if tp != Mysqlx.ClientMessages_CON_CAPABILITIES_GET {
 		return errors.New("bad capabilities get")
@@ -77,6 +80,7 @@ func DealCapabilitiesGet (tp Mysqlx.ClientMessages_Type, _ []byte) error {
 	return nil
 }
 
+// DealSecCapabilitiesSet deals the second capabilities set message.
 func DealSecCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 	if tp != Mysqlx.ClientMessages_CON_CAPABILITIES_SET {
 		return errors.New("bad capabilities set")
@@ -107,7 +111,8 @@ func DealSecCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 	return nil
 }
 
-func ErrorReport() *Mysqlx.Error {
+// CapabilityErrorReport reports capabilities error.
+func CapabilityErrorReport() *Mysqlx.Error {
 	code := new(uint32)
 	*code = 5001
 	sqlState := new(string)

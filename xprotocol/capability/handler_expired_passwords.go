@@ -19,19 +19,23 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 )
 
+// HandlerExpiredPasswords is read only value handler.
 type HandlerExpiredPasswords struct {
 	Name string
 	Expired bool
 }
 
+// IsSupport implements Handler interface.
 func (h *HandlerExpiredPasswords) IsSupport() bool {
 	return true
 }
 
+// GetName implements Handler interface.
 func (h *HandlerExpiredPasswords) GetName() string {
 	return h.Name
 }
 
+// Get implements Handler interface.
 func (h *HandlerExpiredPasswords) Get() *Mysqlx_Connection.Capability {
 	val := util.SetBool(h.Expired)
 	str := new(string)
@@ -43,6 +47,7 @@ func (h *HandlerExpiredPasswords) Get() *Mysqlx_Connection.Capability {
 	return &c
 }
 
+// Set implements Handler interface.
 func (h *HandlerExpiredPasswords) Set(any *Mysqlx_Datatypes.Any) bool {
 	return false
 }

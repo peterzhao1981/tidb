@@ -25,6 +25,7 @@ func scalar2Any(scalar Mysqlx_Datatypes.Scalar) Mysqlx_Datatypes.Any {
 	return any
 }
 
+// SetSint sets signed int.
 func SetSint(data int64) Mysqlx_Datatypes.Any {
 	sca := Mysqlx_Datatypes.Scalar {
 		Type: Mysqlx_Datatypes.Scalar_V_SINT.Enum(),
@@ -33,6 +34,7 @@ func SetSint(data int64) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetUint sets unsigned int.
 func SetUint(data uint64) Mysqlx_Datatypes.Any {
 	sca := Mysqlx_Datatypes.Scalar {
 		Type: Mysqlx_Datatypes.Scalar_V_UINT.Enum(),
@@ -41,6 +43,7 @@ func SetUint(data uint64) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetOct sets octets.
 func SetOct(data []byte) Mysqlx_Datatypes.Any {
 	oct := Mysqlx_Datatypes.Scalar_Octets{
 		Value: data,
@@ -52,6 +55,7 @@ func SetOct(data []byte) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetDouble sets double.
 func SetDouble(data float64) Mysqlx_Datatypes.Any {
 	sca := Mysqlx_Datatypes.Scalar {
 		Type: Mysqlx_Datatypes.Scalar_V_DOUBLE.Enum(),
@@ -60,6 +64,7 @@ func SetDouble(data float64) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetFloat sets float.
 func SetFloat(data float32) Mysqlx_Datatypes.Any {
 	sca := Mysqlx_Datatypes.Scalar {
 		Type: Mysqlx_Datatypes.Scalar_V_FLOAT.Enum(),
@@ -68,6 +73,7 @@ func SetFloat(data float32) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetBool sets bool.
 func SetBool(data bool) Mysqlx_Datatypes.Any {
 	sca := Mysqlx_Datatypes.Scalar {
 		Type: Mysqlx_Datatypes.Scalar_V_BOOL.Enum(),
@@ -76,6 +82,7 @@ func SetBool(data bool) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetString sets string.
 func SetString(data []byte) Mysqlx_Datatypes.Any {
 	str := Mysqlx_Datatypes.Scalar_String{
 		Value: data,
@@ -87,6 +94,7 @@ func SetString(data []byte) Mysqlx_Datatypes.Any {
 	return scalar2Any(sca)
 }
 
+// SetScalarArray sets scalar array to mysqlx array.
 func SetScalarArray(anys []Mysqlx_Datatypes.Any) Mysqlx_Datatypes.Any {
 	vals := []*Mysqlx_Datatypes.Any{}
 	for _, v := range anys {

@@ -46,6 +46,7 @@ func getValue(any Mysqlx_Datatypes.Any) (interface{}, interface{}, error) {
 	return nil, nil, errors.New("wrong type")
 }
 
+// GetSint gets signed int.
 func GetSint(any Mysqlx_Datatypes.Any) (int64, error) {
 	data, _, err := getValue(any)
 	if err != nil {
@@ -54,6 +55,7 @@ func GetSint(any Mysqlx_Datatypes.Any) (int64, error) {
 	return data.(int64), nil
 }
 
+// GetUint gets unsigned int.
 func GetUint(any Mysqlx_Datatypes.Any) (uint64, error) {
 	data, _, err := getValue(any)
 	if err != nil {
@@ -62,6 +64,7 @@ func GetUint(any Mysqlx_Datatypes.Any) (uint64, error) {
 	return data.(uint64), nil
 }
 
+// GetOct gets octets
 func GetOct(any Mysqlx_Datatypes.Any) ([]byte, uint32, error) {
 	data, tp, err := getValue(any)
 	if err != nil {
@@ -70,6 +73,7 @@ func GetOct(any Mysqlx_Datatypes.Any) ([]byte, uint32, error) {
 	return data.([]byte), tp.(uint32), nil
 }
 
+// GetDouble gets double.
 func GetDouble(any Mysqlx_Datatypes.Any) (float64, error) {
 	data, _, err := getValue(any)
 	if err != nil {
@@ -78,6 +82,7 @@ func GetDouble(any Mysqlx_Datatypes.Any) (float64, error) {
 	return data.(float64), nil
 }
 
+// GetFloat gets float.
 func GetFloat(any Mysqlx_Datatypes.Any) (float32, error) {
 	data, _, err := getValue(any)
 	if err != nil {
@@ -86,6 +91,7 @@ func GetFloat(any Mysqlx_Datatypes.Any) (float32, error) {
 	return data.(float32), nil
 }
 
+// GetBool gets bool.
 func GetBool(any Mysqlx_Datatypes.Any) (bool, error) {
 	data, _, err := getValue(any)
 	if err != nil {
@@ -94,6 +100,7 @@ func GetBool(any Mysqlx_Datatypes.Any) (bool, error) {
 	return data.(bool), nil
 }
 
+// GetString gets string.
 func GetString(any Mysqlx_Datatypes.Any) ([]byte, uint64, error) {
 	data, coll, err := getValue(any)
 	if err != nil {

@@ -19,7 +19,7 @@ import (
 
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/mysql"
-	"github.com/pingcap/tidb/xprotocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/arena"
 )
@@ -49,17 +49,17 @@ func createClientConn(conn net.Conn, s *Server) clientConn {
 			connectionID: atomic.AddUint32(&baseConnID, 1),
 			collation:    mysql.DefaultCollationID,
 			alloc:        arena.NewAllocator(32 * 1024),
-			salt:         util.RandomBuf(mysql.SCRAMBLE_LENGTH),
+			salt:         util.RandomBuf(mysql.ScrambleLength),
 		}
 	case MysqlXProtocol:
 		return &mysqlXClientConn{
 			conn:         conn,
-			pkt:          x_packetio.NewXPacketIO(conn),
+			pkt:          xpacketio.NewXPacketIO(conn),
 			server:       s,
 			connectionID: atomic.AddUint32(&baseConnID, 1),
 			collation:    mysql.DefaultCollationID,
 			alloc:        arena.NewAllocator(32 * 1024),
-			salt:         util.RandomBuf(mysql.SCRAMBLE_LENGTH),
+			salt:         util.RandomBuf(mysql.ScrambleLength),
 		}
 	default:
 		log.Error("unknown server type.")

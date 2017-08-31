@@ -21,7 +21,7 @@ import (
 	"github.com/ngaut/log"
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util"
-	"github.com/pingcap/tidb/xprotocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/util/arena"
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
@@ -33,7 +33,7 @@ import (
 // mysqlXClientConn represents a connection between server and client,
 // it maintains connection specific state, handles client query.
 type mysqlXClientConn struct {
-	pkt          *x_packetio.XPacketIO // a helper to read and write data in packet format.
+	pkt          *xpacketio.XPacketIO // a helper to read and write data in packet format.
 	conn         net.Conn
 	server       *Server           // a reference of server instance.
 	capability   uint32            // client capability affects the way server handles client request.
@@ -121,7 +121,7 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 	if err = xprotocol.DealSecCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
-	resp, err = xprotocol.ErrorReport().Marshal()
+	resp, err = xprotocol.CapabilityErrorReport().Marshal()
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -206,22 +206,22 @@ func (xcc *mysqlXClientConn) writeError(e error) {
 }
 
 
-func (cc *mysqlXClientConn) isKilled() bool {
-	return cc.killed
+func (xcc *mysqlXClientConn) isKilled() bool {
+	return xcc.killed
 }
 
-func (cc *mysqlXClientConn) Cancel(query bool) {
-	//cc.ctx.Cancel()
+func (xcc *mysqlXClientConn) Cancel(query bool) {
+	//xcc.ctx.Cancel()
 	if !query {
-		cc.killed = true
+		xcc.killed = true
 	}
 }
 
-func (cc *mysqlXClientConn) id() uint32 {
-	return cc.connectionID
+func (xcc *mysqlXClientConn) id() uint32 {
+	return xcc.connectionID
 }
 
-func (cc *mysqlXClientConn) showProcess() util.ProcessInfo {
-	//return cc.ctx.ShowProcess()
+func (xcc *mysqlXClientConn) showProcess() util.ProcessInfo {
+	//return xcc.ctx.ShowProcess()
 	return util.ProcessInfo{}
 }

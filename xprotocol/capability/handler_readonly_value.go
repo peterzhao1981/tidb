@@ -19,25 +19,29 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 )
 
+// HandlerReadOnlyValue is read only value handler.
 type HandlerReadOnlyValue struct {
 	Name string
 	Value string
 }
 
+// IsSupport implements Handler interface.
 func (h *HandlerReadOnlyValue) IsSupport() bool {
 	return true
 }
 
+// GetName implements Handler interface.
 func (h *HandlerReadOnlyValue) GetName() string {
 	return h.Name
 }
 
-func (h *HandlerReadOnlyValue) GetValue() string {
+func (h *HandlerReadOnlyValue) getValue() string {
 	return h.Value
 }
 
+// Get implements Handler interface.
 func (h *HandlerReadOnlyValue) Get() *Mysqlx_Connection.Capability {
-	val := util.SetString([]byte(h.GetValue()))
+	val := util.SetString([]byte(h.getValue()))
 	str := new(string)
 	*str = h.GetName()
 	c := Mysqlx_Connection.Capability{
@@ -47,6 +51,7 @@ func (h *HandlerReadOnlyValue) Get() *Mysqlx_Connection.Capability {
 	return &c
 }
 
+// Set implements Handler interface.
 func (h *HandlerReadOnlyValue) Set(any *Mysqlx_Datatypes.Any) bool {
 	return false
 }

@@ -60,7 +60,9 @@ var (
 )
 
 const (
+	// MysqlProtocol is MySQL Protocol
 	MysqlProtocol  = 1
+	// MysqlXProtocol is MySQL X Protocol
 	MysqlXProtocol = 2
 )
 
@@ -116,7 +118,7 @@ func (s *Server) newConn(conn net.Conn) *mysqlClientConn {
 			}
 		}
 	}
-	cc.salt = util.RandomBuf(mysql.SCRAMBLE_LENGTH)
+	cc.salt = util.RandomBuf(mysql.ScrambleLength)
 	return cc
 }
 

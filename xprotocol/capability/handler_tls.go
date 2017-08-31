@@ -18,22 +18,27 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 )
 
-type HandleTLS struct {
+// HandlerTLS is read only value handler.
+type HandlerTLS struct {
 
 }
 
-func (h *HandleTLS) IsSupport() bool {
+// IsSupport implements Handler interface.
+func (h *HandlerTLS) IsSupport() bool {
 	return false
 }
 
-func (h *HandleTLS) GetName() string {
+// GetName implements Handler interface.
+func (h *HandlerTLS) GetName() string {
 	return "tls"
 }
 
-func (h *HandleTLS) Get() *Mysqlx_Connection.Capability {
+// Get implements Handler interface.
+func (h *HandlerTLS) Get() *Mysqlx_Connection.Capability {
 	return nil
 }
 
-func (h *HandleTLS) Set(any *Mysqlx_Datatypes.Any) bool {
+// Set implements Handler interface.
+func (h *HandlerTLS) Set(any *Mysqlx_Datatypes.Any) bool {
 	return false
 }

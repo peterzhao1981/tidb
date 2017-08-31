@@ -497,5 +497,5 @@ const (
 
 // session-wide random string
 const (
-	SCRAMBLE_LENGTH = 20
+	ScrambleLength = 20
 )

@@ -25,7 +25,7 @@ func (spa *saslMysql41Auth) handleStart(mechanism *string, data []byte, initial_
 	r := Response{}
 
 	if spa.m_state == S_starting {
-		spa.m_salt = util.RandomBuf(mysql.SCRAMBLE_LENGTH)
+		spa.m_salt = util.RandomBuf(mysql.ScrambleLength)
 		r.data = string(spa.m_salt)
 		r.status = Ongoing
 		r.error_code = 0

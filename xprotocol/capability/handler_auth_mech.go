@@ -19,19 +19,23 @@ import (
 	"github.com/pingcap/tidb/xprotocol/util"
 )
 
-type HandleAuthMech struct {
+// HandlerAuthMechanisms is read only value handler.
+type HandlerAuthMechanisms struct {
 	Values []string
 }
 
-func (h *HandleAuthMech) IsSupport() bool {
+// IsSupport implements Handler interface.
+func (h *HandlerAuthMechanisms) IsSupport() bool {
 	return true
 }
 
-func (h *HandleAuthMech) GetName() string {
+// GetName implements Handler interface.
+func (h *HandlerAuthMechanisms) GetName() string {
 	return "authentication.mechanisms"
 }
 
-func (h *HandleAuthMech) Get() *Mysqlx_Connection.Capability {
+// Get implements Handler interface.
+func (h *HandlerAuthMechanisms) Get() *Mysqlx_Connection.Capability {
 	meths := []Mysqlx_Datatypes.Any{}
 	for _, v := range h.Values {
 		meths = append(meths, util.SetString([]byte(v)))
@@ -46,6 +50,7 @@ func (h *HandleAuthMech) Get() *Mysqlx_Connection.Capability {
 	return &c
 }
 
-func (h *HandleAuthMech) Set(any *Mysqlx_Datatypes.Any) bool {
+// Set implements Handler interface.
+func (h *HandlerAuthMechanisms) Set(any *Mysqlx_Datatypes.Any) bool {
 	return false
 }

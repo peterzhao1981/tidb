@@ -18,9 +18,14 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 )
 
+// Handler is capability handler.
 type Handler interface {
+	// IsSupport returns whether this capability is supported.
 	IsSupport() bool
+	// GetName gets capability name.
 	GetName() string
+	// Get gets capability.
 	Get() *Mysqlx_Connection.Capability
+	// Set sets data to capability.
 	Set(any *Mysqlx_Datatypes.Any) bool
 }
