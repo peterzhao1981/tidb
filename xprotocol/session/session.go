@@ -3,7 +3,7 @@ package session
 import (
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Session"
-	"github.com/pingcap/tidb/xprotocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/xprotocol/notice"
 	"github.com/pingcap/tidb/xprotocol/util"
 	"github.com/pingcap/tidb/mysql"
@@ -25,7 +25,7 @@ type XSession struct {
 	mState            sessionState
 	mStateBeforeClose sessionState
 	sessionId         uint32
-	pkt               *x_packetio.XPacketIO
+	pkt               *xpacketio.XPacketIO
 }
 
 func (xs *XSession) handleMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) bool {
@@ -166,7 +166,7 @@ func (xs *XSession) SendAuthContinue(value *string) error {
 	return xs.pkt.WritePacket(int32(Mysqlx.ServerMessages_SESS_AUTHENTICATE_CONTINUE), data)
 }
 
-func CreateSession(id uint32, pkt *x_packetio.XPacketIO) *XSession {
+func CreateSession(id uint32, pkt *xpacketio.XPacketIO) *XSession {
 	return &XSession{
 		mState: authenticating,
 		mStateBeforeClose: authenticating,

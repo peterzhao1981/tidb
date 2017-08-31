@@ -2,7 +2,7 @@ package notice
 
 import (
 	"github.com/pingcap/tipb/go-mysqlx/Notice"
-	"github.com/pingcap/tidb/xprotocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 	"github.com/pingcap/tidb/mysql"
@@ -11,7 +11,7 @@ import (
 type Notice struct {
 	noticeType NoticeType
 	value      []byte
-	pkt        *x_packetio.XPacketIO
+	pkt        *xpacketio.XPacketIO
 }
 
 type NoticeType uint32
@@ -43,7 +43,7 @@ func (n *Notice) SendNotice(scope Mysqlx_Notice.Frame_Scope, forceFlush bool) er
 	return nil
 }
 
-func SendOK(pkt *x_packetio.XPacketIO, content *string) error {
+func SendOK(pkt *xpacketio.XPacketIO, content *string) error {
 	msg := Mysqlx.Ok{
 		Msg: content,
 	}
@@ -62,7 +62,7 @@ func SendOK(pkt *x_packetio.XPacketIO, content *string) error {
 	return notice.SendLocalNotice(false)
 }
 
-func SendClientId(pkt *x_packetio.XPacketIO, sessionId uint32) error {
+func SendClientId(pkt *xpacketio.XPacketIO, sessionId uint32) error {
 	param := Mysqlx_Notice.SessionStateChanged_Parameter(Mysqlx_Notice.SessionStateChanged_CLIENT_ID_ASSIGNED)
 	scalarType := Mysqlx_Datatypes.Scalar_V_UINT
 	id := uint64(sessionId)
@@ -88,7 +88,7 @@ func SendClientId(pkt *x_packetio.XPacketIO, sessionId uint32) error {
 	return notice.SendLocalNotice(false)
 }
 
-func SendInitError(pkt *x_packetio.XPacketIO, code *uint16, msg *string) error {
+func SendInitError(pkt *xpacketio.XPacketIO, code *uint16, msg *string) error {
 	errCode := uint32(*code)
 	sqlState := mysql.DefaultMySQLState
 	severity := Mysqlx.Error_Severity(Mysqlx.Error_FATAL)
