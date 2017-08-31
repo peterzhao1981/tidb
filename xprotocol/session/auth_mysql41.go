@@ -3,7 +3,7 @@ package session
 import (
 	"github.com/pingcap/tidb/mysql"
 	"github.com/pingcap/tidb/util"
-	"github.com/pingcap/tidb/x-protocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/x-packetio"
 )
 
 type authMysql41State int32
@@ -28,11 +28,11 @@ func (spa *saslMysql41Auth) handleStart(mechanism *string, data []byte, initial_
 		spa.m_salt = util.RandomBuf(mysql.ScrambleLength)
 		r.data = string(spa.m_salt)
 		r.status = Ongoing
-		r.error_code = 0
+		r.errCode = 0
 		spa.m_state = S_waiting_response
 	} else {
 		r.status = Error
-		r.error_code = mysql.ErrNetPacketsOutOfOrder
+		r.errCode = mysql.ErrNetPacketsOutOfOrder
 
 		spa.m_state = S_error
 	}
@@ -49,17 +49,17 @@ func (spa *saslMysql41Auth) handleContinue(data []byte) *Response {
 		err = nil
 		if err == nil {
 			r.status = Succeeded
-			r.error_code = 0
+			r.errCode = 0
 		} else {
 			r.status = Failed
 			r.data = err.Message
-			r.error_code = err.Code
+			r.errCode = err.Code
 		}
 		spa.m_state = S_done
 	} else {
 		spa.m_state = S_error
 		r.status = Error
-		r.error_code = mysql.ErrNetPacketsOutOfOrder
+		r.errCode = mysql.ErrNetPacketsOutOfOrder
 	}
 
 	return &r

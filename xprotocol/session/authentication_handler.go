@@ -2,7 +2,7 @@ package session
 
 import (
 	"github.com/ngaut/log"
-	"github.com/pingcap/tidb/x-protocol/x-packetio"
+	"github.com/pingcap/tidb/xprotocol/x-packetio"
 )
 
 type Status int32
@@ -15,9 +15,9 @@ const (
 )
 
 type Response struct {
-	data       string
-	status     Status
-	error_code uint16
+	data    string
+	status  Status
+	errCode uint16
 }
 
 type AuthenticationHandler interface {

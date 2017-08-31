@@ -28,6 +28,7 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Session"
 	"github.com/pingcap/tipb/go-mysqlx/Sql"
 	"github.com/pingcap/tidb/xprotocol"
+	"github.com/pingcap/tidb/xprotocol/session"
 )
 
 // mysqlXClientConn represents a connection between server and client,
@@ -35,18 +36,19 @@ import (
 type mysqlXClientConn struct {
 	pkt          *xpacketio.XPacketIO // a helper to read and write data in packet format.
 	conn         net.Conn
-	server       *Server           // a reference of server instance.
-	capability   uint32            // client capability affects the way server handles client request.
-	connectionID uint32            // atomically allocated by a global variable, unique in process scope.
-	collation    uint8             // collation used by client, may be different from the collation used by database.
-	user         string            // user of the client.
-	dbname       string            // default database name.
-	salt         []byte            // random bytes used for authentication.
-	alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
-	lastCmd      string            // latest sql query string, currently used for logging error.
+	session      *session.XSession
+	server       *Server         // a reference of server instance.
+	capability   uint32          // client capability affects the way server handles client request.
+	connectionID uint32          // atomically allocated by a global variable, unique in process scope.
+	collation    uint8           // collation used by client, may be different from the collation used by database.
+	user         string          // user of the client.
+	dbname       string          // default database name.
+	salt         []byte          // random bytes used for authentication.
+	alloc        arena.Allocator // an memory allocator for reducing memory allocation.
+	lastCmd      string          // latest sql query string, currently used for logging error.
 	//ctx          QueryCtx          // an interface to execute sql statements.
-	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
-	killed       bool
+	attrs  map[string]string // attributes parsed from client handshake response, not used for now.
+	killed bool
 }
 
 func (xcc *mysqlXClientConn) Run() {
@@ -84,10 +86,17 @@ func (xcc *mysqlXClientConn) Run() {
 }
 
 func (xcc *mysqlXClientConn) Close() error {
-	err := xcc.conn.Close()
-	return errors.Trace(err)
+	xcc.server.rwlock.Lock()
+	delete(xcc.server.clients, xcc.connectionID)
+	connections := len(xcc.server.clients)
+	xcc.server.rwlock.Unlock()
+	connGauge.Set(float64(connections))
+	xcc.conn.Close()
+	//if xcc.ctx != nil {
+	//	return xcc.ctx.Close()
+	//}
+	return nil
 }
-
 
 func (xcc *mysqlXClientConn) handshakeConnection() error {
 	tp, msg, err := xcc.pkt.ReadPacket()
@@ -132,16 +141,35 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 }
 
 func (xcc *mysqlXClientConn) handshakeSession() error {
+	xcc.session = session.CreateSession(xcc.id(), xcc.pkt)
+	tp, msg, err := xcc.pkt.ReadPacket()
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	if xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg) {
+		return errors.New("error happened when handle auth start.")
+	}
+
+	tp, msg, err = xcc.pkt.ReadPacket()
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	if xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg) {
+		return errors.New("error happened when handle auth continue.")
+	}
+
 	return nil
 }
 
 func (xcc *mysqlXClientConn) handshake() error {
 	if err := xcc.handshakeConnection(); err != nil {
-
+		return err
 	}
 
 	if err := xcc.handshakeSession(); err != nil {
-
+		return err
 	}
 
 	return nil
@@ -204,7 +232,6 @@ func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
 
 func (xcc *mysqlXClientConn) writeError(e error) {
 }
-
 
 func (xcc *mysqlXClientConn) isKilled() bool {
 	return xcc.killed
