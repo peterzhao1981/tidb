@@ -15,11 +15,12 @@ package capability
 
 import (
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
+	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
 )
 
 type Handler interface {
 	IsSupport() bool
 	GetName() string
-	Get() Mysqlx_Connection.Capability
-	Set() bool
+	Get() *Mysqlx_Connection.Capability
+	Set(any *Mysqlx_Datatypes.Any) bool
 }

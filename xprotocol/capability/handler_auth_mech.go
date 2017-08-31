@@ -31,17 +31,19 @@ func (h *HandleAuthMech) GetName() string {
 	return "authentication.mechanisms"
 }
 
-func (h *HandleAuthMech) Get() Mysqlx_Connection.Capability {
+func (h *HandleAuthMech) Get() *Mysqlx_Connection.Capability {
 	meths := []Mysqlx_Datatypes.Any{}
 	for _, v := range h.Values {
 		meths = append(meths, util.SetString([]byte(v)))
 	}
 	val := util.SetScalarArray(meths)
+	str := new(string)
+	*str = h.GetName()
 	c := Mysqlx_Connection.Capability{
-		Name: &h.GetName(),
+		Name: str,
 		Value: &val,
 	}
-	return c
+	return &c
 }
 
 func (h *HandleAuthMech) Set(any *Mysqlx_Datatypes.Any) bool {

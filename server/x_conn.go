@@ -27,6 +27,7 @@ import (
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
 	"github.com/pingcap/tipb/go-mysqlx/Session"
 	"github.com/pingcap/tipb/go-mysqlx/Sql"
+	"github.com/pingcap/tidb/xprotocol"
 )
 
 // mysqlXClientConn represents a connection between server and client,
@@ -89,7 +90,44 @@ func (xcc *mysqlXClientConn) Close() error {
 
 
 func (xcc *mysqlXClientConn) handshakeConnection() error {
-
+	tp, msg, err := xcc.pkt.ReadPacket()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if err = xprotocol.DealInitCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+		return errors.Trace(err)
+	}
+	if err = xcc.pkt.WritePacket(int32(Mysqlx.ServerMessages_OK), []byte{}); err != nil {
+		return errors.Trace(err)
+	}
+	tp, msg, err = xcc.pkt.ReadPacket()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if err = xprotocol.DealCapabilitiesGet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+		return errors.Trace(err)
+	}
+	resp, err := xprotocol.GetCapabilities().Marshal()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if err = xcc.pkt.WritePacket(int32(Mysqlx.ServerMessages_CONN_CAPABILITIES), resp); err != nil {
+		return errors.Trace(err)
+	}
+	tp, msg, err = xcc.pkt.ReadPacket()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if err = xprotocol.DealSecCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+		return errors.Trace(err)
+	}
+	resp, err = xprotocol.ErrorReport().Marshal()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if err = xcc.pkt.WritePacket(int32(Mysqlx.ServerMessages_ERROR), resp); err != nil {
+		return errors.Trace(err)
+	}
 	return nil
 }
 

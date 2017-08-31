@@ -30,8 +30,8 @@ func (h *HandleTLS) GetName() string {
 	return "tls"
 }
 
-func (h *HandleTLS) Get() Mysqlx_Connection.Capability {
-	return Mysqlx_Connection.Capability{}
+func (h *HandleTLS) Get() *Mysqlx_Connection.Capability {
+	return nil
 }
 
 func (h *HandleTLS) Set(any *Mysqlx_Datatypes.Any) bool {

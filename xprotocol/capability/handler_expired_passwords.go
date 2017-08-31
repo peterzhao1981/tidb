@@ -32,13 +32,15 @@ func (h *HandlerExpiredPasswords) GetName() string {
 	return h.Name
 }
 
-func (h *HandlerExpiredPasswords) Get() Mysqlx_Connection.Capability {
+func (h *HandlerExpiredPasswords) Get() *Mysqlx_Connection.Capability {
 	val := util.SetBool(h.Expired)
+	str := new(string)
+	*str = h.GetName()
 	c := Mysqlx_Connection.Capability{
-		Name: &h.GetName(),
+		Name: str,
 		Value: &val,
 	}
-	return c
+	return &c
 }
 
 func (h *HandlerExpiredPasswords) Set(any *Mysqlx_Datatypes.Any) bool {

@@ -76,7 +76,7 @@ func NewXPacketIO(conn net.Conn) *XPacketIO {
 func (p *XPacketIO) ReadPacket() (int32, []byte, error) {
 	payload, err := p.readPacket()
 	if err != nil {
-		return 0x00, nil, err
+		return 0, nil, err
 	}
 	return int32(payload[0]), payload[1:], nil
 }

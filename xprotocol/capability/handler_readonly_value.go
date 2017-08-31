@@ -36,13 +36,15 @@ func (h *HandlerReadOnlyValue) GetValue() string {
 	return h.Value
 }
 
-func (h *HandlerReadOnlyValue) Get() Mysqlx_Connection.Capability {
+func (h *HandlerReadOnlyValue) Get() *Mysqlx_Connection.Capability {
 	val := util.SetString([]byte(h.GetValue()))
+	str := new(string)
+	*str = h.GetName()
 	c := Mysqlx_Connection.Capability{
-		Name: &h.GetName(),
+		Name: str,
 		Value: &val,
 	}
-	return c
+	return &c
 }
 
 func (h *HandlerReadOnlyValue) Set(any *Mysqlx_Datatypes.Any) bool {
