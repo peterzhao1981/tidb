@@ -99,20 +99,25 @@ func (xcc *mysqlXClientConn) Close() error {
 }
 
 func (xcc *mysqlXClientConn) handshakeConnection() error {
+	log.Infof("[YUSP] begin connection")
 	tp, msg, err := xcc.pkt.ReadPacket()
 	if err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("[YUSP] deal first msg")
 	if err = xprotocol.DealInitCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("[YUSP] send first msg")
 	if err = xcc.pkt.WritePacket(int32(Mysqlx.ServerMessages_OK), []byte{}); err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("[YUSP] read sec msg")
 	tp, msg, err = xcc.pkt.ReadPacket()
 	if err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("[YUSP] deal sec msg")
 	if err = xprotocol.DealCapabilitiesGet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
@@ -177,16 +182,6 @@ func (xcc *mysqlXClientConn) handshake() error {
 
 func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
 	switch Mysqlx.ClientMessages_Type(tp) {
-	case Mysqlx.ClientMessages_CON_CAPABILITIES_GET:
-		var data Mysqlx_Connection.CapabilitiesGet
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_CON_CAPABILITIES_SET:
-		var data Mysqlx_Connection.CapabilitiesSet
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
 	case Mysqlx.ClientMessages_CON_CLOSE:
 		var data Mysqlx_Connection.Close
 		if err := data.Unmarshal(payload); err != nil {
@@ -230,6 +225,9 @@ func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
 	return nil
 }
 
+func (xcc *mysqlXClientConn) flush() error {
+	return xcc.pkt.Flush()
+}
 func (xcc *mysqlXClientConn) writeError(e error) {
 }
 

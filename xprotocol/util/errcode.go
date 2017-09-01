@@ -1,5 +1,10 @@
 package util
 
+import (
+	"github.com/pingcap/tidb/mysql"
+	"github.com/pingcap/tipb/go-mysqlx"
+)
+
 const (
 	ErXBadMessage                uint16 = 5000
 	ErXCapabilitiesPrepareFailed        = 5001
@@ -52,3 +57,16 @@ const (
 	ErXBadConfiguration                = 5165
 	ErXMysqlxAccountMissingPermissions = 5167
 )
+
+// ErrorMessage returns Mysqlx Error.
+func ErrorMessage(errcode uint16, msg string) *Mysqlx.Error {
+	code := uint32(errcode)
+	sqlState := mysql.DefaultMySQLState
+	errMsg := Mysqlx.Error {
+		Severity: Mysqlx.Error_ERROR.Enum(),
+		Code: &code,
+		SqlState: &sqlState,
+		Msg: &msg,
+	}
+	return &errMsg
+}

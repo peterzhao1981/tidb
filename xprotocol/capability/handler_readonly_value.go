@@ -42,10 +42,9 @@ func (h *HandlerReadOnlyValue) getValue() string {
 // Get implements Handler interface.
 func (h *HandlerReadOnlyValue) Get() *Mysqlx_Connection.Capability {
 	val := util.SetString([]byte(h.getValue()))
-	str := new(string)
-	*str = h.GetName()
+	str := h.GetName()
 	c := Mysqlx_Connection.Capability{
-		Name: str,
+		Name: &str,
 		Value: &val,
 	}
 	return &c

@@ -195,13 +195,20 @@ func main() {
 
 	pushMetric(*metricsAddr, time.Duration(*metricsInterval)*time.Second)
 
-	if err := svr.Run(); err != nil {
-		log.Error(err)
-	}
+	var srvError chan error
+	go func() {
+		srvError <- svr.Run()
+	}()
 	if *startXServer {
-		if err := xsvr.Run(); err != nil {
-			log.Error(err)
-		}
+		go func() {
+			srvError <- xsvr.Run()
+		}()
+	}
+	select {
+	case err = <- srvError:
+	}
+	if err != nil {
+		log.Error(err)
 	}
 	domain.Close()
 	os.Exit(0)

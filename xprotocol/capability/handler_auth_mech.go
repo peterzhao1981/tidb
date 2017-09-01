@@ -41,10 +41,9 @@ func (h *HandlerAuthMechanisms) Get() *Mysqlx_Connection.Capability {
 		meths = append(meths, util.SetString([]byte(v)))
 	}
 	val := util.SetScalarArray(meths)
-	str := new(string)
-	*str = h.GetName()
+	str := h.GetName()
 	c := Mysqlx_Connection.Capability{
-		Name: str,
+		Name: &str,
 		Value: &val,
 	}
 	return &c

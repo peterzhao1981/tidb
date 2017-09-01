@@ -40,6 +40,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/ngaut/log"
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/mysql"
 )
@@ -89,6 +90,7 @@ func (p *XPacketIO) WritePacket(msgType int32, message []byte) error {
 func (p *XPacketIO) readPacket() ([]byte, error) {
 	header := make([]byte, 4)
 
+	log.Infof("[YUSP] begin read")
 	if _, err := io.ReadFull(p.rb, header); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -112,10 +114,10 @@ func (p *XPacketIO) writePacket(data []byte) error {
 	if _, err := p.wb.Write(packet); err != nil {
 		return errors.Trace(mysql.ErrBadConn)
 	} else {
-		return nil
+		return p.Flush()
 	}
 }
 
-func (p *XPacketIO) flush() error {
+func (p *XPacketIO) Flush() error {
 	return p.wb.Flush()
 }
