@@ -72,7 +72,7 @@ var (
 	skipGrantTable      = flagBoolean("skip-grant-table", false, "This option causes the server to start without using the privilege system at all.")
 	slowThreshold       = flag.Int("slow-threshold", 300, "Queries with execution time greater than this value will be logged. (Milliseconds)")
 	queryLogMaxlen      = flag.Int("query-log-max-len", 2048, "Maximum query length recorded in log")
-	startXServer        = flagBoolean("xserver", false, "start tidb x protocol server")
+	startXServer        = flagBoolean("xserver", true, "start tidb x protocol server")
 	tcpKeepAlive        = flagBoolean("tcp-keep-alive", false, "set keep alive option for tcp connection.")
 	timeJumpBackCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
@@ -109,21 +109,17 @@ func main() {
 
 	cfg := config.GetGlobalConfig()
 	cfg.Addr = fmt.Sprintf("%s:%s", *host, *port)
+	cfg.XAddr = fmt.Sprintf("%s:%s", *xhost, *xport)
 	cfg.LogLevel = *logLevel
 	cfg.StatusAddr = fmt.Sprintf(":%s", *statusPort)
 	cfg.Socket = *socket
+	cfg.XSocket = *xsocket
 	cfg.ReportStatus = *reportStatus
 	cfg.Store = *store
 	cfg.StorePath = *storePath
 	cfg.SlowThreshold = *slowThreshold
 	cfg.QueryLogMaxlen = *queryLogMaxlen
 	cfg.TCPKeepAlive = *tcpKeepAlive
-
-	//xcfg := &xserver.Config{
-	//	Addr:     fmt.Sprintf("%s:%s", *xhost, *xport),
-	//	Socket:   *socket,
-	//	LogLevel: *logLevel,
-	//}
 
 	// set log options
 	if len(*logFile) > 0 {
