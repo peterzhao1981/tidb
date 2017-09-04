@@ -43,6 +43,8 @@ import (
 	"github.com/ngaut/log"
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/mysql"
+	"github.com/pingcap/tidb/sessionctx/variable"
+	"strconv"
 )
 
 const (
@@ -98,8 +100,14 @@ func (p *XPacketIO) readPacket() ([]byte, error) {
 	length := binary.LittleEndian.Uint32(header)
 
 	data := make([]byte, length)
-	if _, err := io.ReadFull(p.rb, data); err != nil {
+	if n, err := io.ReadFull(p.rb, data); err != nil {
 		return nil, errors.Trace(err)
+	} else {
+		if max, err := strconv.Atoi(variable.GetSysVar(variable.MaxAllowedPacket).Value); err != nil {
+			return nil, err
+		} else if n >= max {
+			return nil, errors.New("packet for query is too large. Try adjusting the 'max_allowed_packet' variable on the server")
+		}
 	}
 	return data, nil
 }
@@ -110,7 +118,11 @@ func (p *XPacketIO) writePacket(data []byte) error {
 
 	binary.LittleEndian.PutUint32(packet, uint32(length))
 	packet = append(packet, data...)
-
+	if max, err := strconv.Atoi(variable.GetSysVar(variable.MaxAllowedPacket).Value); err != nil {
+		return err
+	} else if len(packet) >= max {
+		return errors.New("packet for query is too large. Try adjusting the 'max_allowed_packet' variable on the server")
+	}
 	if _, err := p.wb.Write(packet); err != nil {
 		return errors.Trace(mysql.ErrBadConn)
 	} else {
