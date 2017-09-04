@@ -1,32 +1,31 @@
-package xprotocol
+package capability
 
 import (
 	"github.com/juju/errors"
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Connection"
 	"github.com/pingcap/tipb/go-mysqlx/Datatypes"
-	"github.com/pingcap/tidb/xprotocol/capability"
 	"github.com/pingcap/tidb/xprotocol/util"
 )
 
-func getCapability(handler capability.Handler) *Mysqlx_Connection.Capability {
+func getCapability(handler Handler) *Mysqlx_Connection.Capability {
 	return handler.Get()
 }
 
 // GetCapabilities gets capabilities which to be sent to clint.
 func GetCapabilities() *Mysqlx_Connection.Capabilities {
-	authHandler := &capability.HandlerAuthMechanisms{
+	authHandler := &HandlerAuthMechanisms{
 		Values: []string{"MYSQL41"},
 	}
-	docHandler := &capability.HandlerReadOnlyValue{
+	docHandler := &HandlerReadOnlyValue{
 		Name: "doc.formats",
 		Value: "text",
 	}
-	nodeHandler := &capability.HandlerReadOnlyValue{
+	nodeHandler := &HandlerReadOnlyValue{
 		Name: "node_type",
 		Value: "mysql",
 	}
-	pwdHandler := &capability.HandlerExpiredPasswords{
+	pwdHandler := &HandlerExpiredPasswords{
 		Name: "client.pwd_expire_ok",
 		Expired: true,
 	}
@@ -115,4 +114,3 @@ func DealSecCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 func CapabilityErrorReport() *Mysqlx.Error {
 	return util.ErrorMessage(5001, "Capability prepare failed for 'tls'")
 }
-

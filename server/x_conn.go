@@ -24,7 +24,7 @@ import (
 	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/util/arena"
 	"github.com/pingcap/tipb/go-mysqlx"
-	"github.com/pingcap/tidb/xprotocol"
+	"github.com/pingcap/tidb/xprotocol/capability"
 	"github.com/pingcap/tidb/xprotocol/session"
 )
 
@@ -102,7 +102,7 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 		return errors.Trace(err)
 	}
 	log.Infof("[YUSP] deal first msg")
-	if err = xprotocol.DealInitCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+	if err = capability.DealInitCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
 	log.Infof("[YUSP] send first msg")
@@ -115,10 +115,10 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 		return errors.Trace(err)
 	}
 	log.Infof("[YUSP] deal sec msg")
-	if err = xprotocol.DealCapabilitiesGet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+	if err = capability.DealCapabilitiesGet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
-	resp, err := xprotocol.GetCapabilities().Marshal()
+	resp, err := capability.GetCapabilities().Marshal()
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -129,10 +129,10 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 	if err != nil {
 		return errors.Trace(err)
 	}
-	if err = xprotocol.DealSecCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+	if err = capability.DealSecCapabilitiesSet(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.Trace(err)
 	}
-	resp, err = xprotocol.CapabilityErrorReport().Marshal()
+	resp, err = capability.CapabilityErrorReport().Marshal()
 	if err != nil {
 		return errors.Trace(err)
 	}
