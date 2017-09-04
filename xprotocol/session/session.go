@@ -1,12 +1,14 @@
 package session
 
 import (
+	"github.com/juju/errors"
 	"github.com/pingcap/tipb/go-mysqlx"
 	"github.com/pingcap/tipb/go-mysqlx/Session"
 	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/xprotocol/notice"
 	"github.com/pingcap/tidb/xprotocol/util"
 	"github.com/pingcap/tidb/mysql"
+	"github.com/pingcap/tipb/go-mysqlx/Sql"
 )
 
 type sessionState int32
@@ -28,37 +30,46 @@ type XSession struct {
 	pkt               *xpacketio.XPacketIO
 }
 
-func (xs *XSession) handleMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) bool {
+func (xs *XSession) handleMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) error {
 	if xs.mState == authenticating {
 		return xs.HandleAuthMessage(msgType, payload)
 	} else if xs.mState == ready {
 		return xs.HandleReadyMessage(msgType, payload)
 	}
 
-	return false
+	return errors.New("unknown session state")
 }
 
-func (xs *XSession) HandleReadyMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) bool {
+func (xs *XSession) HandleReadyMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) error {
 	switch msgType {
 	case Mysqlx.ClientMessages_SESS_CLOSE:
 		content := "bye!"
 		notice.SendOK(xs.pkt, &content)
 		xs.onClose(false)
-		return true
+		return nil
 	case Mysqlx.ClientMessages_CON_CLOSE:
 		content := "bye!"
 		notice.SendOK(xs.pkt, &content)
 		xs.onClose(false)
-		return true
+		return nil
 	case Mysqlx.ClientMessages_SESS_RESET:
 		xs.mState = closing
 		xs.onSessionReset()
-		return true
+		return nil
+	case Mysqlx.ClientMessages_SQL_STMT_EXECUTE:
+		var data Mysqlx_Sql.StmtExecute
+		if err := data.Unmarshal(payload); err != nil {
+			return err
+		}
+		if err := xs.DealSQLStmtExecute(data); err != nil {
+			return err
+		}
+
 	}
-	return false
+	return errors.New("invalid message type")
 }
 
-func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) bool {
+func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payload []byte) error {
 	var r *Response
 	if msgType == Mysqlx.ClientMessages_SESS_AUTHENTICATE_START {
 		var data Mysqlx_Session.AuthenticateStart
@@ -66,7 +77,7 @@ func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payloa
 			errCode := util.ErXBadMessage
 			content := "Invalid message"
 			notice.SendInitError(xs.pkt, &errCode, &content)
-			return false
+			return err
 		}
 
 		xs.authHandler = createAuthHandler(*data.MechName, xs.pkt)
@@ -75,7 +86,7 @@ func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payloa
 			content := "Invalid authentication method " + *data.MechName
 			notice.SendInitError(xs.pkt, &errCode, &content)
 			xs.stopAuth()
-			return false
+			return errors.New("invalid authentication method")
 		}
 
 		r = xs.authHandler.handleStart(data.MechName, data.AuthData, data.InitialResponse)
@@ -85,7 +96,7 @@ func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payloa
 			errCode := util.ErXBadMessage
 			content := "Invalid message"
 			notice.SendInitError(xs.pkt, &errCode, &content)
-			return false
+			return err
 		}
 
 		r = xs.authHandler.handleContinue(data.AuthData)
@@ -94,7 +105,7 @@ func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payloa
 		content := "Invalid message"
 		notice.SendInitError(xs.pkt, &errCode, &content)
 		xs.stopAuth()
-		return false
+		return errors.New("invalid message")
 	}
 
 	switch r.status {
@@ -106,7 +117,7 @@ func (xs *XSession) HandleAuthMessage(msgType Mysqlx.ClientMessages_Type, payloa
 		xs.SendAuthContinue(&r.data)
 	}
 
-	return true
+	return nil
 }
 
 func (xs *XSession) onAuthSuccess(r *Response) {
@@ -173,4 +184,16 @@ func CreateSession(id uint32, pkt *xpacketio.XPacketIO) *XSession {
 		sessionId: id,
 		pkt: pkt,
 	}
+}
+
+func (xs *XSession) DealSQLStmtExecute (msg Mysqlx_Sql.StmtExecute) error {
+	switch msg.GetNamespace() {
+	case "xplugin":
+	case "mysqlx":
+	case "sql", "":
+		//sql := string(msg.GetStmt())
+	default:
+		return errors.New("unknown namespace")
+	}
+	return nil
 }

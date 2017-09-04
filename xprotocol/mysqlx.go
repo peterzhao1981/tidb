@@ -115,3 +115,4 @@ func DealSecCapabilitiesSet (tp Mysqlx.ClientMessages_Type, msg []byte) error {
 func CapabilityErrorReport() *Mysqlx.Error {
 	return util.ErrorMessage(5001, "Capability prepare failed for 'tls'")
 }
+

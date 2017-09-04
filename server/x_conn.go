@@ -24,9 +24,6 @@ import (
 	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/util/arena"
 	"github.com/pingcap/tipb/go-mysqlx"
-	"github.com/pingcap/tipb/go-mysqlx/Connection"
-	"github.com/pingcap/tipb/go-mysqlx/Session"
-	"github.com/pingcap/tipb/go-mysqlx/Sql"
 	"github.com/pingcap/tidb/xprotocol"
 	"github.com/pingcap/tidb/xprotocol/session"
 )
@@ -46,7 +43,7 @@ type mysqlXClientConn struct {
 	salt         []byte          // random bytes used for authentication.
 	alloc        arena.Allocator // an memory allocator for reducing memory allocation.
 	lastCmd      string          // latest sql query string, currently used for logging error.
-	//ctx          QueryCtx          // an interface to execute sql statements.
+	ctx          QueryCtx          // an interface to execute sql statements.
 	attrs  map[string]string // attributes parsed from client handshake response, not used for now.
 	killed bool
 }
@@ -152,7 +149,7 @@ func (xcc *mysqlXClientConn) handshakeSession() error {
 		return errors.Trace(err)
 	}
 
-	if xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg) {
+	if err := xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.New("error happened when handle auth start.")
 	}
 
@@ -161,7 +158,7 @@ func (xcc *mysqlXClientConn) handshakeSession() error {
 		return errors.Trace(err)
 	}
 
-	if xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg) {
+	if err := xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.New("error happened when handle auth continue.")
 	}
 
@@ -181,46 +178,8 @@ func (xcc *mysqlXClientConn) handshake() error {
 }
 
 func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
-	switch Mysqlx.ClientMessages_Type(tp) {
-	case Mysqlx.ClientMessages_CON_CLOSE:
-		var data Mysqlx_Connection.Close
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_START:
-		var data Mysqlx_Session.AuthenticateStart
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_SESS_AUTHENTICATE_CONTINUE:
-		var data Mysqlx_Session.AuthenticateContinue
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_SESS_RESET:
-		var data Mysqlx_Session.Reset
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_SESS_CLOSE:
-		var data Mysqlx_Session.Close
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_SQL_STMT_EXECUTE:
-		var data Mysqlx_Sql.StmtExecute
-		if err := data.Unmarshal(payload); err != nil {
-			return err
-		}
-	case Mysqlx.ClientMessages_CRUD_FIND:
-	case Mysqlx.ClientMessages_CRUD_INSERT:
-	case Mysqlx.ClientMessages_CRUD_UPDATE:
-	case Mysqlx.ClientMessages_CRUD_DELETE:
-	case Mysqlx.ClientMessages_EXPECT_OPEN:
-	case Mysqlx.ClientMessages_EXPECT_CLOSE:
-	case Mysqlx.ClientMessages_CRUD_CREATE_VIEW:
-	case Mysqlx.ClientMessages_CRUD_MODIFY_VIEW:
-	case Mysqlx.ClientMessages_CRUD_DROP_VIEW:
+	if err := xcc.session.HandleReadyMessage(Mysqlx.ClientMessages_Type(tp), payload); err != nil {
+		return errors.New("dispatch error")
 	}
 	return nil
 }
