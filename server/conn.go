@@ -47,6 +47,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pingcap/tidb/driver"
 	"github.com/pingcap/tidb/executor"
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/mysql"
@@ -77,7 +78,7 @@ type mysqlClientConn struct {
 	salt         []byte            // random bytes used for authentication.
 	alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
 	lastCmd      string            // latest sql query string, currently used for logging error.
-	ctx          QueryCtx          // an interface to execute sql statements.
+	ctx          driver.QueryCtx          // an interface to execute sql statements.
 	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
 	killed       bool
 }
@@ -104,7 +105,7 @@ func (cc *mysqlClientConn) handshake() error {
 	data = append(data, mysql.OKHeader)
 	data = append(data, 0, 0)
 	if cc.capability&mysql.ClientProtocol41 > 0 {
-		data = append(data, dumpUint16(mysql.ServerStatusAutocommit)...)
+		data = append(data, driver.DumpUint16(mysql.ServerStatusAutocommit)...)
 		data = append(data, 0, 0)
 	}
 
@@ -151,7 +152,7 @@ func (cc *mysqlClientConn) writeInitialHandshake() error {
 	// charset, utf-8 default
 	data = append(data, uint8(mysql.DefaultCollationID))
 	//status
-	data = append(data, dumpUint16(mysql.ServerStatusAutocommit)...)
+	data = append(data, driver.DumpUint16(mysql.ServerStatusAutocommit)...)
 	// below 13 byte may not be used
 	// capability flag upper 2 bytes, using default capability here
 	data = append(data, byte(defaultCapability>>16), byte(defaultCapability>>24))
@@ -218,7 +219,7 @@ func handshakeResponseFromData(packet *handshakeResponse41, data []byte) (err er
 		// MySQL client sets the wrong capability, it will set this bit even server doesn't
 		// support ClientPluginAuthLenencClientData.
 		// https://github.com/mysql/mysql-server/blob/5.7/sql-common/client.c#L3478
-		num, null, off := parseLengthEncodedInt(data[pos:])
+		num, null, off := driver.ParseLengthEncodedInt(data[pos:])
 		pos += off
 		if !null {
 			packet.Auth = data[pos : pos+int(num)]
@@ -254,7 +255,7 @@ func handshakeResponseFromData(packet *handshakeResponse41, data []byte) (err er
 			// Defend some ill-formated packet, connection attribute is not important and can be ignored.
 			return nil
 		}
-		if num, null, off := parseLengthEncodedInt(data[pos:]); !null {
+		if num, null, off := driver.ParseLengthEncodedInt(data[pos:]); !null {
 			pos += off
 			kv := data[pos : pos+int(num)]
 			attrs, err := parseAttrs(kv)
@@ -273,12 +274,12 @@ func parseAttrs(data []byte) (map[string]string, error) {
 	attrs := make(map[string]string)
 	pos := 0
 	for pos < len(data) {
-		key, _, off, err := parseLengthEncodedBytes(data[pos:])
+		key, _, off, err := driver.ParseLengthEncodedBytes(data[pos:])
 		if err != nil {
 			return attrs, errors.Trace(err)
 		}
 		pos += off
-		value, _, off, err := parseLengthEncodedBytes(data[pos:])
+		value, _, off, err := driver.ParseLengthEncodedBytes(data[pos:])
 		if err != nil {
 			return attrs, errors.Trace(err)
 		}
@@ -516,11 +517,11 @@ func (cc *mysqlClientConn) flush() error {
 func (cc *mysqlClientConn) writeOK() error {
 	data := cc.alloc.AllocWithLen(4, 32)
 	data = append(data, mysql.OKHeader)
-	data = append(data, dumpLengthEncodedInt(uint64(cc.ctx.AffectedRows()))...)
-	data = append(data, dumpLengthEncodedInt(uint64(cc.ctx.LastInsertID()))...)
+	data = append(data, driver.DumpLengthEncodedInt(uint64(cc.ctx.AffectedRows()))...)
+	data = append(data, driver.DumpLengthEncodedInt(uint64(cc.ctx.LastInsertID()))...)
 	if cc.capability&mysql.ClientProtocol41 > 0 {
-		data = append(data, dumpUint16(cc.ctx.Status())...)
-		data = append(data, dumpUint16(cc.ctx.WarningCount())...)
+		data = append(data, driver.DumpUint16(cc.ctx.Status())...)
+		data = append(data, driver.DumpUint16(cc.ctx.WarningCount())...)
 	}
 
 	err := cc.writePacket(data)
@@ -571,12 +572,12 @@ func (cc *mysqlClientConn) writeEOF(more bool) error {
 
 	data = append(data, mysql.EOFHeader)
 	if cc.capability&mysql.ClientProtocol41 > 0 {
-		data = append(data, dumpUint16(cc.ctx.WarningCount())...)
+		data = append(data, driver.DumpUint16(cc.ctx.WarningCount())...)
 		status := cc.ctx.Status()
 		if more {
 			status |= mysql.ServerMoreResultsExists
 		}
-		data = append(data, dumpUint16(cc.ctx.Status())...)
+		data = append(data, driver.DumpUint16(cc.ctx.Status())...)
 	}
 
 	err := cc.writePacket(data)
@@ -732,7 +733,7 @@ func (cc *mysqlClientConn) handleFieldList(sql string) (err error) {
 // If binary is true, the data would be encoded in BINARY format.
 // If more is true, a flag bit would be set to indicate there are more
 // resultsets, it's used to support the MULTI_RESULTS capability in mysql protocol.
-func (cc *mysqlClientConn) writeResultset(rs ResultSet, binary bool, more bool) error {
+func (cc *mysqlClientConn) writeResultset(rs driver.ResultSet, binary bool, more bool) error {
 	defer rs.Close()
 	// We need to call Next before we get columns.
 	// Otherwise, we will get incorrect columns info.
@@ -746,7 +747,7 @@ func (cc *mysqlClientConn) writeResultset(rs ResultSet, binary bool, more bool) 
 		return errors.Trace(err)
 	}
 
-	columnLen := dumpLengthEncodedInt(uint64(len(columns)))
+	columnLen := driver.DumpLengthEncodedInt(uint64(len(columns)))
 	data := cc.alloc.AllocWithLen(4, 1024)
 	data = append(data, columnLen...)
 	if err = cc.writePacket(data); err != nil {
@@ -775,7 +776,7 @@ func (cc *mysqlClientConn) writeResultset(rs ResultSet, binary bool, more bool) 
 		data = data[0:4]
 		if binary {
 			var rowData []byte
-			rowData, err = dumpRowValuesBinary(cc.alloc, columns, row)
+			rowData, err = driver.DumpRowValuesBinary(cc.alloc, columns, row)
 			if err != nil {
 				return errors.Trace(err)
 			}
@@ -791,7 +792,7 @@ func (cc *mysqlClientConn) writeResultset(rs ResultSet, binary bool, more bool) 
 				if err != nil {
 					return errors.Trace(err)
 				}
-				data = append(data, dumpLengthEncodedString(valData, cc.alloc)...)
+				data = append(data, driver.DumpLengthEncodedString(valData, cc.alloc)...)
 			}
 		}
 
@@ -809,7 +810,7 @@ func (cc *mysqlClientConn) writeResultset(rs ResultSet, binary bool, more bool) 
 	return errors.Trace(cc.flush())
 }
 
-func (cc *mysqlClientConn) writeMultiResultset(rss []ResultSet, binary bool) error {
+func (cc *mysqlClientConn) writeMultiResultset(rss []driver.ResultSet, binary bool) error {
 	for _, rs := range rss {
 		if err := cc.writeResultset(rs, binary, true); err != nil {
 			return errors.Trace(err)

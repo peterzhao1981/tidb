@@ -1,4 +1,4 @@
-package session
+package auth
 
 type saslPlainAuth struct {}
 

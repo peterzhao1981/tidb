@@ -24,8 +24,10 @@ import (
 	"github.com/pingcap/tidb/xprotocol/xpacketio"
 	"github.com/pingcap/tidb/util/arena"
 	"github.com/pingcap/tipb/go-mysqlx"
+	"github.com/pingcap/tipb/go-mysqlx/Sql"
 	"github.com/pingcap/tidb/xprotocol/capability"
-	"github.com/pingcap/tidb/xprotocol/session"
+	"github.com/pingcap/tidb/xprotocol/auth"
+	"github.com/pingcap/tidb/driver"
 )
 
 // mysqlXClientConn represents a connection between server and client,
@@ -33,19 +35,19 @@ import (
 type mysqlXClientConn struct {
 	pkt          *xpacketio.XPacketIO // a helper to read and write data in packet format.
 	conn         net.Conn
-	session      *session.XSession
-	server       *Server         // a reference of server instance.
-	capability   uint32          // client capability affects the way server handles client request.
-	connectionID uint32          // atomically allocated by a global variable, unique in process scope.
-	collation    uint8           // collation used by client, may be different from the collation used by database.
-	user         string          // user of the client.
-	dbname       string          // default database name.
-	salt         []byte          // random bytes used for authentication.
-	alloc        arena.Allocator // an memory allocator for reducing memory allocation.
-	lastCmd      string          // latest sql query string, currently used for logging error.
-	ctx          QueryCtx          // an interface to execute sql statements.
-	attrs  map[string]string // attributes parsed from client handshake response, not used for now.
-	killed bool
+	auth         *auth.XAuth
+	server       *Server           // a reference of server instance.
+	capability   uint32            // client capability affects the way server handles client request.
+	connectionID uint32            // atomically allocated by a global variable, unique in process scope.
+	collation    uint8             // collation used by client, may be different from the collation used by database.
+	user         string            // user of the client.
+	dbname       string            // default database name.
+	salt         []byte            // random bytes used for authentication.
+	alloc        arena.Allocator   // an memory allocator for reducing memory allocation.
+	lastCmd      string            // latest sql query string, currently used for logging error.
+	ctx          driver.QueryCtx   // an interface to execute sql statements.
+	attrs        map[string]string // attributes parsed from client handshake response, not used for now.
+	killed       bool
 }
 
 func (xcc *mysqlXClientConn) Run() {
@@ -64,6 +66,7 @@ func (xcc *mysqlXClientConn) Run() {
 			return
 		}
 		if err = xcc.dispatch(tp, payload); err != nil {
+			log.Infof("[XUWT] dispatch msg type(%s), payload(%s)", tp, payload)
 			if terror.ErrorEqual(err, terror.ErrResultUndetermined) {
 				log.Errorf("[%d] result undetermined error, close this connection %s",
 					xcc.connectionID, errors.ErrorStack(err))
@@ -143,13 +146,19 @@ func (xcc *mysqlXClientConn) handshakeConnection() error {
 }
 
 func (xcc *mysqlXClientConn) handshakeSession() error {
-	xcc.session = session.CreateSession(xcc.id(), xcc.pkt)
+	xcc.auth = auth.CreateAuth(xcc.id(), xcc.ctx, xcc.pkt)
 	tp, msg, err := xcc.pkt.ReadPacket()
 	if err != nil {
 		return errors.Trace(err)
 	}
 
-	if err := xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+	// Open session and do auth
+	xcc.ctx, err = xcc.server.driver.OpenCtx(uint64(xcc.connectionID), xcc.capability, uint8(xcc.collation), xcc.dbname)
+	if err != nil {
+		return errors.Trace(err)
+	}
+
+	if err := xcc.auth.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.New("error happened when handle auth start.")
 	}
 
@@ -158,7 +167,7 @@ func (xcc *mysqlXClientConn) handshakeSession() error {
 		return errors.Trace(err)
 	}
 
-	if err := xcc.session.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
+	if err := xcc.auth.HandleAuthMessage(Mysqlx.ClientMessages_Type(tp), msg); err != nil {
 		return errors.New("error happened when handle auth continue.")
 	}
 
@@ -178,9 +187,20 @@ func (xcc *mysqlXClientConn) handshake() error {
 }
 
 func (xcc *mysqlXClientConn) dispatch(tp int32, payload []byte) error {
-	if err := xcc.session.HandleReadyMessage(Mysqlx.ClientMessages_Type(tp), payload); err != nil {
-		return errors.New("dispatch error")
+	msgType := Mysqlx.ClientMessages_Type(tp)
+	switch msgType {
+	case Mysqlx.ClientMessages_SESS_CLOSE, Mysqlx.ClientMessages_CON_CLOSE, Mysqlx.ClientMessages_SESS_RESET:
+		if err := xcc.auth.HandleReadyMessage(msgType, payload); err != nil {
+			return err
+		}
+	case Mysqlx.ClientMessages_SQL_STMT_EXECUTE:
+		if err := xcc.DealSQLStmtExecute(msgType, payload); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("unknown message type %d", tp)
 	}
+
 	return nil
 }
 
@@ -208,4 +228,23 @@ func (xcc *mysqlXClientConn) id() uint32 {
 func (xcc *mysqlXClientConn) showProcess() util.ProcessInfo {
 	//return xcc.ctx.ShowProcess()
 	return util.ProcessInfo{}
+}
+
+
+func (xcc *mysqlXClientConn) DealSQLStmtExecute (msgType Mysqlx.ClientMessages_Type, payload []byte) error {
+	var msg Mysqlx_Sql.StmtExecute
+	if err := msg.Unmarshal(payload); err != nil {
+		return err
+	}
+
+	switch msg.GetNamespace() {
+	case "xplugin":
+	case "mysqlx":
+	case "sql", "":
+		sql := string(msg.GetStmt())
+		xcc.ctx.Execute(sql)
+	default:
+		return errors.New("unknown namespace")
+	}
+	return nil
 }

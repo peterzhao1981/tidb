@@ -56,6 +56,7 @@ func createClientConn(conn net.Conn, s *Server) clientConn {
 			conn:         conn,
 			pkt:          xpacketio.NewXPacketIO(conn),
 			server:       s,
+			capability:   defaultCapability,
 			connectionID: atomic.AddUint32(&baseConnID, 1),
 			collation:    mysql.DefaultCollationID,
 			alloc:        arena.NewAllocator(32 * 1024),

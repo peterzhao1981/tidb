@@ -44,6 +44,7 @@ import (
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/arena"
+	"github.com/pingcap/tidb/driver"
 )
 
 var (
@@ -69,7 +70,7 @@ const (
 // Server is the MySQL protocol server
 type Server struct {
 	cfg               *config.Config
-	driver            IDriver
+	driver            driver.IDriver
 	listener          net.Listener
 	rwlock            *sync.RWMutex
 	concurrentLimiter *TokenLimiter
@@ -129,7 +130,7 @@ func (s *Server) skipAuth() bool {
 const tokenLimit = 1000
 
 // NewServer creates a new Server.
-func NewServer(cfg *config.Config, driver IDriver, serverType int) (*Server, error) {
+func NewServer(cfg *config.Config, driver driver.IDriver, serverType int) (*Server, error) {
 	s := &Server{
 		cfg:               cfg,
 		driver:            driver,

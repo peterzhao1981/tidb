@@ -1,4 +1,4 @@
-package session
+package auth
 
 import (
 	"github.com/ngaut/log"
@@ -35,7 +35,7 @@ func createAuthHandler(method string, pkt *xpacketio.XPacketIO) AuthenticationHa
 	case "PLAIN":
 		return &saslPlainAuth{}
 	default:
-		log.Error("unknown auth handler type.")
+		log.Error("unknown XAuth handler type.")
 		return nil
 	}
 }

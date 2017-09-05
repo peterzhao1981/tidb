@@ -42,6 +42,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"google.golang.org/grpc"
+	"github.com/pingcap/tidb/driver"
 )
 
 var (
@@ -156,17 +157,17 @@ func main() {
 		log.Fatal(errors.ErrorStack(err))
 	}
 
-	var driver server.IDriver
-	driver = server.NewTiDBDriver(store)
+	var tidbDriver driver.IDriver
+	tidbDriver = driver.NewTiDBDriver(store)
 	var svr *server.Server
-	svr, err = server.NewServer(cfg, driver, server.MysqlProtocol)
+	svr, err = server.NewServer(cfg, tidbDriver, server.MysqlProtocol)
 	if err != nil {
 		log.Fatal(errors.ErrorStack(err))
 	}
 
 	var xsvr *server.Server
 	if *startXServer {
-		xsvr, err = server.NewServer(cfg, driver, server.MysqlXProtocol)
+		xsvr, err = server.NewServer(cfg, tidbDriver, server.MysqlXProtocol)
 		if err != nil {
 			log.Fatal(errors.ErrorStack(err))
 		}

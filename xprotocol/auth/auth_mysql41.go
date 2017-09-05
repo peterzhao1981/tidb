@@ -1,4 +1,4 @@
-package session
+package auth
 
 import (
 	"github.com/pingcap/tidb/mysql"
